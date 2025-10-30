@@ -1,13 +1,25 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import type { ListingWithDetails } from '@/types'
+import { createClient } from '@/lib/supabase/server'
+import { isFavorite } from '@/lib/actions/favorite.actions'
+import FavoriteButton from './FavoriteButton'
 
 interface ListingCardProps {
   listing: ListingWithDetails
   showActions?: boolean
+  showFavorite?: boolean
 }
 
-export default function ListingCard({ listing, showActions = false }: ListingCardProps) {
+export default async function ListingCard({
+  listing,
+  showActions = false,
+  showFavorite = true
+}: ListingCardProps) {
+  // Vérifier si l'utilisateur est connecté et si c'est un favori
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const isListingFavorite = showFavorite && user ? await isFavorite(listing.id) : false
   // Extraire la première image
   const images = Array.isArray(listing.images) ? listing.images : []
   const mainImage = images[0]
@@ -19,7 +31,7 @@ export default function ListingCard({ listing, showActions = false }: ListingCar
   })
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group relative">
       <Link href={`/listing/${listing.id}`}>
         {/* Image */}
         <div className="relative h-48 bg-etsy-gray-light overflow-hidden">
@@ -70,6 +82,18 @@ export default function ListingCard({ listing, showActions = false }: ListingCar
               >
                 {listing.status === 'published' ? 'Publié' : 'Brouillon'}
               </span>
+            </div>
+          )}
+
+          {/* Bouton favori (seulement sur les pages publiques) */}
+          {showFavorite && !showActions && (
+            <div className="absolute top-2 right-2 z-10">
+              <FavoriteButton
+                listingId={listing.id}
+                initialIsFavorite={isListingFavorite}
+                currentUserId={user?.id}
+                size="sm"
+              />
             </div>
           )}
         </div>

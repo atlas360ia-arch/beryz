@@ -3,7 +3,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { getListingById } from '@/lib/actions/listing.actions'
 import { createClient } from '@/lib/supabase/server'
+import { isFavorite } from '@/lib/actions/favorite.actions'
 import ContactSellerButton from '@/components/ContactSellerButton'
+import FavoriteButton from '@/components/FavoriteButton'
 
 export default async function ListingDetailPage({
   params,
@@ -24,6 +26,9 @@ export default async function ListingDetailPage({
 
   // Vérifier si c'est le propriétaire
   const isOwner = user?.id === listing.user_id
+
+  // Vérifier si c'est un favori
+  const isListingFavorite = user && !isOwner ? await isFavorite(listing.id) : false
 
   // Extraire les images
   const images = Array.isArray(listing.images) ? listing.images : []
@@ -193,17 +198,14 @@ export default async function ListingDetailPage({
                     currentUserId={user?.id}
                     className="w-full"
                   />
-                  <button className="w-full bg-etsy-secondary hover:bg-etsy-secondary-dark text-etsy-dark font-semibold px-6 py-3 rounded-lg transition-colors flex items-center justify-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                      />
-                    </svg>
-                    Ajouter aux favoris
-                  </button>
+                  <FavoriteButton
+                    listingId={listing.id}
+                    initialIsFavorite={isListingFavorite}
+                    currentUserId={user?.id}
+                    size="lg"
+                    showLabel={true}
+                    className="w-full px-6 py-3"
+                  />
                 </div>
               )}
 
