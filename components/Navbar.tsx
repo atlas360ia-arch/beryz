@@ -1,12 +1,16 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/lib/actions/auth.actions'
+import { getUnreadCount } from '@/lib/actions/message.actions'
 
 export default async function Navbar() {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
+
+  // Récupérer le nombre de messages non lus (seulement si connecté)
+  const unreadCount = user ? await getUnreadCount() : 0
 
   return (
     <nav className="bg-white shadow-sm border-b border-etsy-gray-light">
@@ -41,9 +45,14 @@ export default async function Navbar() {
 
                 <Link
                   href="/seller/messages"
-                  className="text-etsy-dark hover:text-etsy-primary font-medium transition-colors"
+                  className="text-etsy-dark hover:text-etsy-primary font-medium transition-colors relative"
                 >
                   Messages
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-2 -right-3 bg-etsy-error text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
                 </Link>
 
                 {/* Bouton publier */}
