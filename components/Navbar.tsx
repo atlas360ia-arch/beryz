@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/lib/actions/auth.actions'
 import { getUnreadCount } from '@/lib/actions/message.actions'
+import { isAdmin } from '@/lib/actions/admin.actions'
 
 export default async function Navbar() {
   const supabase = await createClient()
@@ -11,6 +12,9 @@ export default async function Navbar() {
 
   // Récupérer le nombre de messages non lus (seulement si connecté)
   const unreadCount = user ? await getUnreadCount() : 0
+
+  // Vérifier si l'utilisateur est admin
+  const userIsAdmin = user ? await isAdmin() : false
 
   return (
     <nav className="bg-white shadow-sm border-b border-etsy-gray-light">
@@ -54,6 +58,16 @@ export default async function Navbar() {
                     </span>
                   )}
                 </Link>
+
+                {/* Lien Admin (seulement pour les admins) */}
+                {userIsAdmin && (
+                  <Link
+                    href="/admin/dashboard"
+                    className="text-etsy-gold hover:text-etsy-gold-dark font-medium transition-colors"
+                  >
+                    Admin
+                  </Link>
+                )}
 
                 {/* Bouton publier */}
                 <Link
