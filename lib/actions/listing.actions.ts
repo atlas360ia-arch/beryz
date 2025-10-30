@@ -35,6 +35,7 @@ export async function createListing(formData: FormData): Promise<ActionResult> {
   const category_id = formData.get('category_id') as string
   const price = formData.get('price') as string
   const location_city = formData.get('location_city') as string
+  const condition = formData.get('condition') as string
   const images = formData.get('images') as string // JSON string
 
   // Validation
@@ -52,6 +53,7 @@ export async function createListing(formData: FormData): Promise<ActionResult> {
       category_id,
       price: price ? parseFloat(price) : null,
       location_city,
+      condition: condition || 'good',
       images: images ? JSON.parse(images) : [],
       status: 'draft',
     })
@@ -102,6 +104,7 @@ export async function updateListing(
   const category_id = formData.get('category_id') as string
   const price = formData.get('price') as string
   const location_city = formData.get('location_city') as string
+  const condition = formData.get('condition') as string
   const images = formData.get('images') as string
 
   // Mettre à jour
@@ -113,6 +116,7 @@ export async function updateListing(
       category_id,
       price: price ? parseFloat(price) : null,
       location_city,
+      condition: condition || 'good',
       images: images ? JSON.parse(images) : [],
     })
     .eq('id', listingId)
@@ -327,4 +331,110 @@ export async function incrementViews(listingId: string): Promise<void> {
   await supabase.rpc('increment_views', { listing_id: listingId }).catch((e) => {
     console.error('Error incrementing views:', e)
   })
+}
+
+/**
+ * Rechercher et filtrer les annonces
+ */
+export interface SearchParams {
+  search?: string
+  categoryId?: string
+  city?: string
+  minPrice?: string
+  maxPrice?: string
+  condition?: string
+  sortBy?: string
+  page?: number
+  limit?: number
+}
+
+export async function searchListings(params: SearchParams) {
+  const supabase = await createClient()
+
+  const {
+    search = '',
+    categoryId = '',
+    city = '',
+    minPrice = '',
+    maxPrice = '',
+    condition = '',
+    sortBy = 'recent',
+    page = 1,
+    limit = 20,
+  } = params
+
+  // Construire la requête de base (seulement les annonces publiées)
+  let query = supabase
+    .from('listings')
+    .select(
+      `
+      *,
+      category:categories(*),
+      seller_profile:seller_profiles(*)
+    `,
+      { count: 'exact' }
+    )
+    .eq('status', 'published')
+
+  // Appliquer les filtres
+  if (search) {
+    query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`)
+  }
+
+  if (categoryId) {
+    query = query.eq('category_id', categoryId)
+  }
+
+  if (city) {
+    query = query.eq('location_city', city)
+  }
+
+  if (minPrice) {
+    query = query.gte('price', parseFloat(minPrice))
+  }
+
+  if (maxPrice) {
+    query = query.lte('price', parseFloat(maxPrice))
+  }
+
+  if (condition) {
+    query = query.eq('condition', condition)
+  }
+
+  // Appliquer le tri
+  switch (sortBy) {
+    case 'popular':
+      query = query.order('views_count', { ascending: false })
+      break
+    case 'price_asc':
+      query = query.order('price', { ascending: true, nullsFirst: false })
+      break
+    case 'price_desc':
+      query = query.order('price', { ascending: false, nullsFirst: false })
+      break
+    case 'recent':
+    default:
+      query = query.order('created_at', { ascending: false })
+      break
+  }
+
+  // Pagination
+  const from = (page - 1) * limit
+  const to = from + limit - 1
+  query = query.range(from, to)
+
+  const { data, error, count } = await query
+
+  if (error) {
+    console.error('Error searching listings:', error)
+    return { listings: [], count: 0, pages: 0 }
+  }
+
+  const totalPages = count ? Math.ceil(count / limit) : 0
+
+  return {
+    listings: data || [],
+    count: count || 0,
+    pages: totalPages,
+  }
 }

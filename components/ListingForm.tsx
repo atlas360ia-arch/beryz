@@ -152,29 +152,50 @@ export default function ListingForm({ listing, categories, mode }: ListingFormPr
         </div>
       </div>
 
-      {/* Prix */}
-      <div>
-        <label htmlFor="price" className="block text-sm font-medium text-etsy-dark mb-2">
-          Prix (optionnel)
-        </label>
-        <div className="relative">
-          <input
-            id="price"
-            name="price"
-            type="number"
-            min="0"
-            step="0.01"
-            defaultValue={listing?.price || ''}
-            className="w-full px-4 py-2 pr-16 border border-etsy-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-etsy-primary focus:border-transparent"
-            placeholder="0.00"
-          />
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <span className="text-etsy-dark-light">GNF</span>
+      {/* Prix et État en ligne */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Prix */}
+        <div>
+          <label htmlFor="price" className="block text-sm font-medium text-etsy-dark mb-2">
+            Prix (optionnel)
+          </label>
+          <div className="relative">
+            <input
+              id="price"
+              name="price"
+              type="number"
+              min="0"
+              step="0.01"
+              defaultValue={listing?.price || ''}
+              className="w-full px-4 py-2 pr-16 border border-etsy-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-etsy-primary focus:border-transparent"
+              placeholder="0.00"
+            />
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <span className="text-etsy-dark-light">GNF</span>
+            </div>
           </div>
+          <p className="mt-1 text-xs text-etsy-dark-light">
+            Laissez vide si le prix est à négocier
+          </p>
         </div>
-        <p className="mt-1 text-xs text-etsy-dark-light">
-          Laissez vide si le prix est à négocier
-        </p>
+
+        {/* État */}
+        <div>
+          <label htmlFor="condition" className="block text-sm font-medium text-etsy-dark mb-2">
+            État
+          </label>
+          <select
+            id="condition"
+            name="condition"
+            defaultValue={listing?.condition || 'good'}
+            className="w-full px-4 py-2 border border-etsy-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-etsy-primary focus:border-transparent"
+          >
+            <option value="new">Neuf</option>
+            <option value="excellent">Excellent état</option>
+            <option value="good">Bon état</option>
+            <option value="fair">État correct</option>
+          </select>
+        </div>
       </div>
 
       {/* Upload d'images */}

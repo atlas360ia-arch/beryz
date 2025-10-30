@@ -1,47 +1,20 @@
-import { createClient } from '@/lib/supabase/server'
-import ListingGrid from '@/components/ListingGrid'
+import { Suspense } from 'react'
+import { getCategories } from '@/lib/actions/listing.actions'
+import BrowseContent from '@/components/BrowseContent'
 
 export default async function BrowsePage() {
-  const supabase = await createClient()
-
-  // Récupérer les annonces publiées
-  const { data: listings } = await supabase
-    .from('listings')
-    .select('*, category:categories(*), seller_profile:seller_profiles(*)')
-    .eq('status', 'published')
-    .order('created_at', { ascending: false })
-    .limit(24)
+  // Récupérer les catégories (côté serveur)
+  const categories = await getCategories()
 
   return (
-    <div className="min-h-screen bg-etsy-secondary-light">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-etsy-dark mb-2">
-            Parcourir les annonces
-          </h1>
-          <p className="text-etsy-dark-light">
-            Découvrez les dernières offres en Guinée
-          </p>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-etsy-secondary-light flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-etsy-primary"></div>
         </div>
-
-        {/* Barre de recherche simple */}
-        <div className="mb-8">
-          <div className="max-w-2xl">
-            <input
-              type="search"
-              placeholder="Rechercher une annonce..."
-              className="w-full px-4 py-3 border border-etsy-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-etsy-primary focus:border-transparent"
-            />
-          </div>
-        </div>
-
-        {/* Grille d'annonces avec le nouveau composant */}
-        <ListingGrid
-          listings={listings || []}
-          emptyMessage="Aucune annonce disponible pour le moment. Soyez le premier à publier !"
-        />
-      </div>
-    </div>
+      }
+    >
+      <BrowseContent categories={categories} />
+    </Suspense>
   )
 }
