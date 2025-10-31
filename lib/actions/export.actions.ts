@@ -67,25 +67,29 @@ export async function exportUsers() {
     return { success: false, error: 'Erreur lors de l\'export' }
   }
 
-  // Get emails from auth.users
-  const userIds = users.map(u => u.user_id)
-  const { data: authUsers } = await supabase.auth.admin.listUsers()
+  // Get emails - Fetch emails for each user individually to avoid admin API
+  const exportData = await Promise.all(users.map(async (user) => {
+    // Try to get email from metadata or auth
+    let email = ''
+    try {
+      const { data: authUser } = await supabase.auth.admin.getUserById(user.user_id)
+      email = authUser?.user?.email || ''
+    } catch (e) {
+      // If admin API fails, we skip the email
+      email = 'N/A'
+    }
 
-  const emailMap: Record<string, string> = {}
-  authUsers?.users.forEach(u => {
-    emailMap[u.id] = u.email || ''
-  })
-
-  const exportData = users.map(user => ({
-    ID: user.user_id,
-    Email: emailMap[user.user_id] || '',
-    'Nom Commercial': user.business_name || '',
-    Rôle: user.role,
-    Vérifié: user.verified ? 'Oui' : 'Non',
-    Banni: user.banned ? 'Oui' : 'Non',
-    Ville: user.city || '',
-    Note: user.rating,
-    'Date Inscription': new Date(user.created_at).toLocaleDateString('fr-FR'),
+    return {
+      ID: user.user_id,
+      Email: email,
+      'Nom Commercial': user.business_name || '',
+      Rôle: user.role,
+      Vérifié: user.verified ? 'Oui' : 'Non',
+      Banni: user.banned ? 'Oui' : 'Non',
+      Ville: user.city || '',
+      Note: user.rating,
+      'Date Inscription': new Date(user.created_at).toLocaleDateString('fr-FR'),
+    }
   }))
 
   const csv = convertToCSV(

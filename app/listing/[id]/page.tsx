@@ -1,11 +1,65 @@
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
+import { Metadata } from 'next'
 import { getListingById } from '@/lib/actions/listing.actions'
 import { createClient } from '@/lib/supabase/server'
 import { isFavorite } from '@/lib/actions/favorite.actions'
 import ContactSellerButton from '@/components/ContactSellerButton'
 import FavoriteButton from '@/components/FavoriteButton'
+import ShareButtons from '@/components/ShareButtons'
+
+// Générer les métadonnées pour SEO et Open Graph
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
+  const listing = await getListingById(id)
+
+  if (!listing) {
+    return {
+      title: 'Annonce introuvable',
+    }
+  }
+
+  const images = Array.isArray(listing.images) ? listing.images : []
+  const mainImage = images[0] || '/placeholder.jpg'
+  const url = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/listing/${id}`
+  const priceText = listing.price ? `${listing.price.toLocaleString('fr-FR')} GNF` : 'Prix à négocier'
+
+  return {
+    title: `${listing.title} - Annonces Guinée`,
+    description: listing.description.slice(0, 160),
+    openGraph: {
+      title: listing.title,
+      description: listing.description.slice(0, 160),
+      type: 'website',
+      url: url,
+      siteName: 'Annonces Guinée',
+      locale: 'fr_GN',
+      images: [
+        {
+          url: mainImage,
+          width: 1200,
+          height: 630,
+          alt: listing.title,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: listing.title,
+      description: listing.description.slice(0, 160),
+      images: [mainImage],
+    },
+    other: {
+      'price': priceText,
+      'availability': listing.status === 'active' ? 'in stock' : 'out of stock',
+    },
+  }
+}
 
 export default async function ListingDetailPage({
   params,
@@ -40,7 +94,48 @@ export default async function ListingDetailPage({
     day: 'numeric',
   })
 
+  // URL complète pour le partage
+  const listingUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/listing/${listing.id}`
+
+  // Données structurées JSON-LD pour SEO
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: listing.title,
+    description: listing.description,
+    image: images.length > 0 ? images : ['/placeholder.jpg'],
+    offers: {
+      '@type': 'Offer',
+      price: listing.price || 0,
+      priceCurrency: 'GNF',
+      availability: listing.status === 'active' ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      url: listingUrl,
+    },
+    ...(listing.seller_profile && {
+      seller: {
+        '@type': 'Organization',
+        name: listing.seller_profile.business_name || 'Vendeur',
+        ...(listing.seller_profile.rating && {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: listing.seller_profile.rating,
+            bestRating: 5,
+          },
+        }),
+      },
+    }),
+    ...(listing.category && {
+      category: listing.category.name,
+    }),
+  }
+
   return (
+    <>
+      {/* Données structurées pour les moteurs de recherche */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
     <div className="min-h-screen bg-etsy-secondary-light">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Bouton retour */}
@@ -121,6 +216,15 @@ export default async function ListingDetailPage({
               <p className="text-etsy-dark whitespace-pre-line leading-relaxed">
                 {listing.description}
               </p>
+            </div>
+
+            {/* Partage social */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <ShareButtons
+                url={listingUrl}
+                title={listing.title}
+                description={listing.description.slice(0, 100)}
+              />
             </div>
           </div>
 
@@ -262,5 +366,6 @@ export default async function ListingDetailPage({
         </div>
       </div>
     </div>
+    </>
   )
 }
