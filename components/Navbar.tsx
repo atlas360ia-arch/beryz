@@ -59,6 +59,13 @@ export default async function Navbar() {
                   )}
                 </Link>
 
+                <Link
+                  href="/seller/analytics"
+                  className="text-etsy-dark hover:text-etsy-primary font-medium transition-colors"
+                >
+                  Stats
+                </Link>
+
                 {/* Lien Admin (seulement pour les admins) */}
                 {userIsAdmin && (
                   <Link

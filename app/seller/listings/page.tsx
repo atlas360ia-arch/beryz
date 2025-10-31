@@ -1,8 +1,7 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import ListingActions from '@/components/ListingActions'
+import BulkListingActions from '@/components/BulkListingActions'
 
 export default async function SellerListingsPage() {
   const supabase = await createClient()
@@ -44,71 +43,7 @@ export default async function SellerListingsPage() {
 
         {/* Liste des annonces */}
         {listings && listings.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {listings.map((listing) => {
-              const images = Array.isArray(listing.images) ? listing.images : []
-              const mainImage = images[0]
-
-              return (
-                <div
-                  key={listing.id}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-                >
-                  {/* Image */}
-                  <div className="relative h-48 bg-etsy-gray-light">
-                    {mainImage ? (
-                      <Image
-                        src={mainImage}
-                        alt={listing.title}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <span className="text-etsy-gray-dark">Pas d'image</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Contenu */}
-                  <div className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span
-                        className={`text-xs px-2 py-1 rounded ${
-                          listing.status === 'published'
-                            ? 'bg-etsy-success text-white'
-                            : 'bg-etsy-gray text-etsy-dark'
-                        }`}
-                      >
-                        {listing.status === 'published' ? 'Publié' : 'Brouillon'}
-                      </span>
-                      <span className="text-sm text-etsy-dark-light">
-                        {listing.views_count} vues
-                      </span>
-                    </div>
-
-                    <h3 className="font-semibold text-etsy-dark mb-2 line-clamp-2">
-                      {listing.title}
-                    </h3>
-
-                    {listing.price && (
-                      <p className="text-lg font-bold text-etsy-primary mb-2">
-                        {listing.price.toLocaleString()} GNF
-                      </p>
-                    )}
-
-                    <p className="text-sm text-etsy-dark-light mb-4">
-                      {listing.location_city}
-                    </p>
-
-                    {/* Actions avec le nouveau composant */}
-                    <ListingActions listingId={listing.id} status={listing.status} />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+          <BulkListingActions listings={listings} />
         ) : (
           /* État vide */
           <div className="bg-white rounded-lg shadow-md p-12 text-center">
