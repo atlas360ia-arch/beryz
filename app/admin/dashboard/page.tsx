@@ -1,6 +1,9 @@
 import { getDashboardStats, getRecentActivity } from '@/lib/actions/admin.actions'
+import { getRecentActivity as getFullActivity, getGrowthMetrics } from '@/lib/actions/reports.actions'
 import AdminLayout from '@/components/admin/AdminLayout'
-import StatsCard from '@/components/admin/StatsCard'
+import EnhancedStatsCard from '@/components/admin/EnhancedStatsCard'
+import QuickActions from '@/components/admin/QuickActions'
+import RecentActivityFeed from '@/components/admin/RecentActivityFeed'
 import {
   UserGroupIcon,
   DocumentTextIcon,
@@ -10,8 +13,12 @@ import {
 import Link from 'next/link'
 
 export default async function AdminDashboardPage() {
-  const stats = await getDashboardStats()
-  const activity = await getRecentActivity()
+  const [stats, activity, recentActivity, growth] = await Promise.all([
+    getDashboardStats(),
+    getRecentActivity(),
+    getFullActivity(),
+    getGrowthMetrics(),
+  ])
 
   return (
     <AdminLayout>
@@ -25,34 +32,56 @@ export default async function AdminDashboardPage() {
         </p>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards with Growth */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatsCard
+        <EnhancedStatsCard
           title="Total Utilisateurs"
           value={stats.totalUsers}
-          icon={<UserGroupIcon className="h-6 w-6" />}
-          subtitle={`+${stats.todayUsers} aujourd'hui`}
+          icon={<UserGroupIcon />}
+          trend={{
+            value: growth.users.growth,
+            label: `+${stats.todayUsers} aujourd'hui`,
+            isPositive: growth.users.growth >= 0,
+          }}
+          color="primary"
         />
 
-        <StatsCard
+        <EnhancedStatsCard
           title="Total Annonces"
           value={stats.totalListings}
-          icon={<DocumentTextIcon className="h-6 w-6" />}
-          subtitle={`+${stats.todayListings} aujourd'hui`}
+          icon={<DocumentTextIcon />}
+          trend={{
+            value: growth.listings.growth,
+            label: `+${stats.todayListings} aujourd'hui`,
+            isPositive: growth.listings.growth >= 0,
+          }}
+          color="success"
         />
 
-        <StatsCard
+        <EnhancedStatsCard
           title="Annonces Publiées"
           value={stats.publishedListings}
-          icon={<CheckCircleIcon className="h-6 w-6" />}
+          icon={<CheckCircleIcon />}
           subtitle={`${Math.round((stats.publishedListings / stats.totalListings) * 100)}% du total`}
+          color="info"
         />
 
-        <StatsCard
+        <EnhancedStatsCard
           title="Total Messages"
           value={stats.totalMessages}
-          icon={<ChatBubbleLeftRightIcon className="h-6 w-6" />}
+          icon={<ChatBubbleLeftRightIcon />}
+          trend={{
+            value: growth.messages.growth,
+            label: 'vs mois précédent',
+            isPositive: growth.messages.growth >= 0,
+          }}
+          color="warning"
         />
+      </div>
+
+      {/* Quick Actions */}
+      <div className="mb-8">
+        <QuickActions />
       </div>
 
       {/* Activity Section */}
@@ -162,6 +191,11 @@ export default async function AdminDashboardPage() {
             Voir tous les utilisateurs →
           </Link>
         </div>
+      </div>
+
+      {/* Recent Activity Feed */}
+      <div className="mt-8">
+        <RecentActivityFeed activities={recentActivity} />
       </div>
     </AdminLayout>
   )
