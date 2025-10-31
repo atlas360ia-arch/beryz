@@ -59,7 +59,24 @@ export async function middleware(request: NextRequest) {
   )
 
   // Rafraîchir la session si elle existe
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Vérifier si l'utilisateur est banni
+  if (user) {
+    const { data: profile } = await supabase
+      .from('seller_profiles')
+      .select('banned')
+      .eq('user_id', user.id)
+      .single()
+
+    // Si l'utilisateur est banni, le rediriger vers la page banned
+    // sauf s'il est déjà sur la page banned ou en train de se déconnecter
+    if (profile?.banned &&
+        !request.nextUrl.pathname.startsWith('/banned') &&
+        !request.nextUrl.pathname.startsWith('/api/auth/signout')) {
+      return NextResponse.redirect(new URL('/banned', request.url))
+    }
+  }
 
   return response
 }
