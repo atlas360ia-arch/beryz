@@ -1,6 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { updateSellerProfile } from '@/lib/actions/auth.actions'
+import ReviewList from '@/components/ReviewList'
+import { getSellerReviews, getSellerReviewStats } from '@/lib/actions/review.actions'
+import { StarIcon } from '@heroicons/react/24/solid'
 
 export default async function SellerProfilePage() {
   const supabase = await createClient()
@@ -18,6 +21,14 @@ export default async function SellerProfilePage() {
     .select('*')
     .eq('user_id', user.id)
     .single()
+
+  // Récupérer les avis reçus
+  const reviewsResult = await getSellerReviews(user.id, 10, 0)
+  const initialReviews = reviewsResult.success ? reviewsResult.data : []
+
+  // Récupérer les statistiques des avis
+  const statsResult = await getSellerReviewStats(user.id)
+  const reviewStats = statsResult.success ? statsResult.data : { totalReviews: 0, averageRating: '5.0', ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } }
 
   return (
     <div className="min-h-screen bg-etsy-secondary-light">
@@ -165,6 +176,28 @@ export default async function SellerProfilePage() {
               </button>
             </div>
           </form>
+        </div>
+
+        {/* Section Avis reçus */}
+        <div className="mt-8 bg-white rounded-lg shadow-md p-8">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-etsy-dark mb-2">Mes avis</h2>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1">
+                <StarIcon className="w-6 h-6 text-yellow-400" />
+                <span className="text-2xl font-bold text-etsy-dark">{reviewStats.averageRating}</span>
+              </div>
+              <span className="text-etsy-dark-light">
+                ({reviewStats.totalReviews} {reviewStats.totalReviews > 1 ? 'avis' : 'avis'})
+              </span>
+            </div>
+          </div>
+
+          <ReviewList
+            sellerId={user.id}
+            currentUserId={user.id}
+            initialReviews={initialReviews}
+          />
         </div>
       </div>
     </div>

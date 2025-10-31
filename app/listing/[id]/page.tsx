@@ -8,6 +8,10 @@ import { isFavorite } from '@/lib/actions/favorite.actions'
 import ContactSellerButton from '@/components/ContactSellerButton'
 import FavoriteButton from '@/components/FavoriteButton'
 import ShareButtons from '@/components/ShareButtons'
+import ReviewList from '@/components/ReviewList'
+import ReviewForm from '@/components/ReviewForm'
+import { getSellerReviews, getSellerReviewStats, canUserReview } from '@/lib/actions/review.actions'
+import { StarIcon } from '@heroicons/react/24/solid'
 
 // Générer les métadonnées pour SEO et Open Graph
 export async function generateMetadata({
@@ -96,6 +100,18 @@ export default async function ListingDetailPage({
 
   // URL complète pour le partage
   const listingUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/listing/${listing.id}`
+
+  // Récupérer les avis du vendeur
+  const reviewsResult = await getSellerReviews(listing.user_id, 5, 0)
+  const initialReviews = reviewsResult.success ? reviewsResult.data : []
+
+  // Récupérer les statistiques des avis
+  const statsResult = await getSellerReviewStats(listing.user_id)
+  const reviewStats = statsResult.success ? statsResult.data : { totalReviews: 0, averageRating: '5.0', ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } }
+
+  // Vérifier si l'utilisateur peut laisser un avis
+  const canReviewResult = await canUserReview(listing.user_id)
+  const userCanReview = canReviewResult.canReview && !isOwner
 
   // Données structurées JSON-LD pour SEO
   const jsonLd = {
@@ -224,6 +240,41 @@ export default async function ListingDetailPage({
                 url={listingUrl}
                 title={listing.title}
                 description={listing.description.slice(0, 100)}
+              />
+            </div>
+
+            {/* Section Avis */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-etsy-dark mb-2">Avis sur le vendeur</h2>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1">
+                      <StarIcon className="w-6 h-6 text-yellow-400" />
+                      <span className="text-2xl font-bold text-etsy-dark">{reviewStats.averageRating}</span>
+                    </div>
+                    <span className="text-etsy-dark-light">
+                      ({reviewStats.totalReviews} {reviewStats.totalReviews > 1 ? 'avis' : 'avis'})
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Formulaire d'avis */}
+              {userCanReview && user && (
+                <div className="mb-8">
+                  <ReviewForm
+                    sellerId={listing.user_id}
+                    listingId={listing.id}
+                  />
+                </div>
+              )}
+
+              {/* Liste des avis */}
+              <ReviewList
+                sellerId={listing.user_id}
+                currentUserId={user?.id}
+                initialReviews={initialReviews}
               />
             </div>
           </div>
