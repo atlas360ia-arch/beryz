@@ -30,7 +30,7 @@ export default function ListingForm({ listing, categories, mode }: ListingFormPr
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [images, setImages] = useState<string[]>(
-    listing?.images ? (Array.isArray(listing.images) ? listing.images : []) : []
+    listing?.images ? (Array.isArray(listing.images) ? (listing.images as string[]) : []) : []
   )
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -187,7 +187,7 @@ export default function ListingForm({ listing, categories, mode }: ListingFormPr
           <select
             id="condition"
             name="condition"
-            defaultValue={listing?.condition || 'good'}
+            defaultValue={(listing as any)?.condition || 'good'}
             className="w-full px-4 py-2 border border-etsy-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-etsy-primary focus:border-transparent"
           >
             <option value="new">Neuf</option>

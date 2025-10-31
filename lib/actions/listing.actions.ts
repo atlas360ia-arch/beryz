@@ -328,9 +328,11 @@ export async function getListingById(id: string) {
 export async function incrementViews(listingId: string): Promise<void> {
   const supabase = await createClient()
 
-  await supabase.rpc('increment_views', { listing_id: listingId }).catch((e) => {
-    console.error('Error incrementing views:', e)
-  })
+  const { error } = await supabase.rpc('increment_views', { listing_id: listingId })
+
+  if (error) {
+    console.error('Error incrementing views:', error)
+  }
 }
 
 /**

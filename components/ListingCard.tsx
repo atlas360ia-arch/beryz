@@ -1,28 +1,26 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import type { ListingWithDetails } from '@/types'
-import { createClient } from '@/lib/supabase/server'
-import { isFavorite } from '@/lib/actions/favorite.actions'
 import FavoriteButton from './FavoriteButton'
 
 interface ListingCardProps {
   listing: ListingWithDetails
   showActions?: boolean
   showFavorite?: boolean
+  currentUserId?: string
+  initialIsFavorite?: boolean
 }
 
-export default async function ListingCard({
+export default function ListingCard({
   listing,
   showActions = false,
-  showFavorite = true
+  showFavorite = true,
+  currentUserId,
+  initialIsFavorite = false
 }: ListingCardProps) {
-  // Vérifier si l'utilisateur est connecté et si c'est un favori
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const isListingFavorite = showFavorite && user ? await isFavorite(listing.id) : false
   // Extraire la première image
   const images = Array.isArray(listing.images) ? listing.images : []
-  const mainImage = images[0]
+  const mainImage = images[0] as string | undefined
 
   // Formater la date
   const createdDate = new Date(listing.created_at).toLocaleDateString('fr-FR', {
@@ -86,12 +84,12 @@ export default async function ListingCard({
           )}
 
           {/* Bouton favori (seulement sur les pages publiques) */}
-          {showFavorite && !showActions && (
+          {showFavorite && !showActions && currentUserId && (
             <div className="absolute top-2 right-2 z-10">
               <FavoriteButton
                 listingId={listing.id}
-                initialIsFavorite={isListingFavorite}
-                currentUserId={user?.id}
+                initialIsFavorite={initialIsFavorite}
+                currentUserId={currentUserId}
                 size="sm"
               />
             </div>

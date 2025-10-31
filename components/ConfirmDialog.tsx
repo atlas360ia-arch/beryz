@@ -8,7 +8,7 @@ interface ConfirmDialogProps {
   onClose: () => void
   onConfirm: () => void
   title: string
-  description: string
+  description: string | ReactNode
   confirmLabel?: string
   cancelLabel?: string
   variant?: 'danger' | 'warning' | 'info'

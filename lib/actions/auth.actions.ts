@@ -17,7 +17,7 @@ interface ActionResult {
 /**
  * Inscription d'un nouvel utilisateur
  */
-export async function signup(formData: FormData): Promise<ActionResult> {
+export async function signup(formData: FormData): Promise<void> {
   const supabase = await createClient()
 
   const email = formData.get('email') as string
@@ -25,12 +25,12 @@ export async function signup(formData: FormData): Promise<ActionResult> {
   const businessName = formData.get('business_name') as string
 
   if (!email || !password) {
-    return { success: false, error: 'Email et mot de passe requis' }
+    redirect('/auth/signup?error=Email et mot de passe requis')
   }
 
   // Validation basique
   if (password.length < 6) {
-    return { success: false, error: 'Le mot de passe doit contenir au moins 6 caractères' }
+    redirect('/auth/signup?error=Le mot de passe doit contenir au moins 6 caractères')
   }
 
   const { data, error } = await supabase.auth.signUp({
@@ -44,11 +44,11 @@ export async function signup(formData: FormData): Promise<ActionResult> {
   })
 
   if (error) {
-    return { success: false, error: error.message }
+    redirect(`/auth/signup?error=${encodeURIComponent(error.message)}`)
   }
 
   if (!data.user) {
-    return { success: false, error: 'Erreur lors de la création du compte' }
+    redirect('/auth/signup?error=Erreur lors de la création du compte')
   }
 
   // Mettre à jour le profil vendeur avec le nom de l'entreprise
@@ -66,14 +66,14 @@ export async function signup(formData: FormData): Promise<ActionResult> {
 /**
  * Connexion d'un utilisateur existant
  */
-export async function login(formData: FormData): Promise<ActionResult> {
+export async function login(formData: FormData): Promise<void> {
   const supabase = await createClient()
 
   const email = formData.get('email') as string
   const password = formData.get('password') as string
 
   if (!email || !password) {
-    return { success: false, error: 'Email et mot de passe requis' }
+    redirect('/auth/login?error=Email et mot de passe requis')
   }
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -82,7 +82,7 @@ export async function login(formData: FormData): Promise<ActionResult> {
   })
 
   if (error) {
-    return { success: false, error: 'Email ou mot de passe incorrect' }
+    redirect('/auth/login?error=Email ou mot de passe incorrect')
   }
 
   revalidatePath('/', 'layout')
@@ -92,13 +92,14 @@ export async function login(formData: FormData): Promise<ActionResult> {
 /**
  * Déconnexion
  */
-export async function logout(): Promise<ActionResult> {
+export async function logout(): Promise<void> {
   const supabase = await createClient()
 
   const { error } = await supabase.auth.signOut()
 
   if (error) {
-    return { success: false, error: error.message }
+    console.error('Logout error:', error)
+    // Continue with redirect even on error
   }
 
   revalidatePath('/', 'layout')
@@ -149,7 +150,7 @@ export async function getCurrentSellerProfile() {
 /**
  * Mettre à jour le profil vendeur
  */
-export async function updateSellerProfile(formData: FormData): Promise<ActionResult> {
+export async function updateSellerProfile(formData: FormData): Promise<void> {
   const supabase = await createClient()
 
   const {
@@ -157,7 +158,7 @@ export async function updateSellerProfile(formData: FormData): Promise<ActionRes
   } = await supabase.auth.getUser()
 
   if (!user) {
-    return { success: false, error: 'Non authentifié' }
+    redirect('/auth/login')
   }
 
   const businessName = formData.get('business_name') as string
@@ -176,9 +177,10 @@ export async function updateSellerProfile(formData: FormData): Promise<ActionRes
     .eq('user_id', user.id)
 
   if (error) {
-    return { success: false, error: error.message }
+    console.error('Error updating profile:', error)
+    redirect('/seller/profile?error=' + encodeURIComponent(error.message))
   }
 
   revalidatePath('/seller/profile')
-  return { success: true }
+  redirect('/seller/profile?success=Profil mis à jour avec succès')
 }

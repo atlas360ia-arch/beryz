@@ -127,7 +127,7 @@ export async function isFavorite(listingId: string): Promise<boolean> {
 /**
  * Récupérer tous les favoris de l'utilisateur
  */
-export async function getFavorites() {
+export async function getFavorites(): Promise<any[]> {
   const supabase = await createClient()
 
   const {
@@ -160,9 +160,11 @@ export async function getFavorites() {
   }
 
   // Filtrer les favoris dont le listing existe encore
-  return favorites
-    ?.filter((fav) => fav.listing !== null)
-    .map((fav) => fav.listing) || []
+  return (
+    favorites
+      ?.filter((fav: any) => fav.listing !== null)
+      .map((fav: any) => fav.listing) || []
+  )
 }
 
 /**

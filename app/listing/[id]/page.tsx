@@ -82,7 +82,7 @@ export default async function ListingDetailPage({
                   {/* Miniatures */}
                   {images.length > 1 && (
                     <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
-                      {images.map((img, index) => (
+                      {images.map((img: string, index: number) => (
                         <div
                           key={index}
                           className="relative h-20 bg-etsy-gray-light rounded-lg overflow-hidden cursor-pointer hover:opacity-75 transition-opacity"
